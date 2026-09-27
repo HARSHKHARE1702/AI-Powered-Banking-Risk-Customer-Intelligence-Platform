@@ -1,0 +1,18 @@
+import pandas as pd
+import numpy as np
+
+df = pd.read_csv("../data/raw/customers.csv")
+
+df.head()
+df.shape()
+df.info()
+df.descibe()
+df.isnull().sum()
+missing_percentage = (
+    df.isnull().mean() * 100
+).sort_values(ascending=False)
+
+print(missing_percentage)
+
+df.duplicated().sum()
+df["customer_id"].duplicated().sum()
