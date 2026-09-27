@@ -1,0 +1,53 @@
+import numpy as np
+import pandas as pd
+
+np.random.seed(42)
+
+N = 10000
+
+customers = pd.DataFrame({
+    "customer_id": [f"C{i:06d}" for i in range(1, N + 1)],
+    "age": np.random.randint(21, 70, N),
+    "income": np.random.randint(20000, 250000, N),
+    "credit_score": np.random.randint(300, 850, N),
+    "existing_loans": np.random.randint(0, 6, N),
+    "loan_amount": np.random.randint(50000, 3000000, N),
+    "loan_tenure": np.random.choice(
+        [12, 24, 36, 48, 60, 84], N
+    ),
+    "monthly_emi": np.random.randint(2000, 100000, N),
+    "account_balance": np.random.randint(1000, 1000000, N),
+    "transaction_frequency": np.random.randint(1, 100, N),
+    "delinquency_count": np.random.randint(0, 8, N),
+    "credit_utilization": np.round(
+        np.random.uniform(0.05, 0.95, N), 2
+    ),
+    "employment_type": np.random.choice(
+        ["Salaried", "Self-Employed", "Business"],
+        N
+    )
+})
+
+# Synthetic target generation
+risk_score = (
+    (650 - customers["credit_score"]) * 0.01
+    + customers["existing_loans"] * 0.08
+    + customers["delinquency_count"] * 0.12
+    + customers["credit_utilization"] * 0.5
+    + customers["loan_amount"] / customers["income"] * 0.03
+)
+
+probability = 1 / (1 + np.exp(-risk_score + 2.5))
+
+customers["default"] = (
+    np.random.random(N) < probability
+).astype(int)
+
+customers.to_csv(
+    "data/raw/customers.csv",
+    index=False
+)
+
+print("Customer dataset created.")
+print(customers.head())
+print(customers["default"].value_counts())
