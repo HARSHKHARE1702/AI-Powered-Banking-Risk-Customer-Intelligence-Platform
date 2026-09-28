@@ -1,5 +1,10 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.model_selection import train_test_split
 
 df = pd.read_csv("../data/raw/customers.csv")
 
@@ -16,3 +21,138 @@ print(missing_percentage)
 
 df.duplicated().sum()
 df["customer_id"].duplicated().sum()
+df["default"].value_counts().plot(kind="Bar")
+plt.title("Credit Default Distribution")
+plt.xlabel("Default")
+plt.ylabel("Customers")
+plt.show()
+//Credit Score
+df["credit_score"].hist(bins=30)
+
+plt.title("Credit Score Distribution")
+plt.xlabel("Credit Score")
+plt.ylabel("Frequency")
+
+plt.show()
+//Income
+df["income"].hist(bins=30)
+
+plt.title("Income Distribution")
+plt.xlabel("Income")
+plt.ylabel("Frequency")
+
+plt.show()
+//Loan Amount
+
+df["loan_amount"].hist(bins=30)
+plt.title("Loan Amount Distribution")
+plt.xlabel("Loan Amount")
+plt.ylabel("Frequency")
+plt.show()
+
+//Default vs Credit-Score
+
+df.groupby("default")["credit_score"].mean()
+
+df.boxplot(
+    column="credit_score",
+    by="default"
+)
+
+plt.title("Credit Score vs Default")
+plt.suptitle("")
+
+plt.show()
+
+//Default vs Deliquency
+df.groupby("default")["delinquency_count"].mean()
+
+//Default vs Credit Utilization
+df.groupby("default")["credit_utilization"].mean()
+
+//Correlation Analysis
+
+numeric_df = df.select_dtypes(
+    include=["int64", "float64"]
+)
+
+correlation = numeric_df.corr()
+
+correlation["default"].sort_values(
+    ascending=False
+)
+//Visualize
+
+plt.figure(figsize=(12, 8))
+
+sns.heatmap(
+    correlation,
+    annot=True,
+    cmap="coolwarm"
+)
+
+plt.title("Feature Correlation Matrix")
+plt.show()
+
+//Categorical Analysis
+df["employment_type"].value_counts()
+
+//Default rate By employment Type
+df.groupby(
+    "employment_type"
+)["default"].mean()
+
+//Feature Engineering
+//Debt-to-Income Ratio
+df["debt_to_income"] = (
+    df["monthly_emi"] / df["income"]
+)
+//Loan-to-Income Ratio
+df["loan_to_income"] = (
+    df["loan_amount"] / df["income"]
+)
+//Balance-to-Income Ration
+df["balance_to_income"] = (
+    df["account_balance"] / df["income"]
+)
+//Deliquency Flag
+df["has_delinquency"] = (
+    df["delinquency_count"] > 0
+).astype(int)
+
+//Prepare Features and Target
+
+X = df.drop(
+    columns=[
+        "customer_id",
+        "default"
+    ]
+)
+
+y = df["default"]
+
+//One-hot Encoding
+categorical_features = [
+    "employment_type"
+]
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "categorical",
+            OneHotEncoder(handle_unknown="ignore"),
+            categorical_features
+        )
+    ],
+    remainder="passthrough"
+)
+//Train-Test Split
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y
+)
