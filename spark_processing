@@ -1,0 +1,227 @@
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, sum
+from pyspark.sql.functions import (
+    avg,
+    sum,
+    count,
+    max,
+    min
+)
+)
+from pyspark.sql.functions import countDistinct
+from pyspark.sql.functions import when
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number
+
+spark = (
+    SparkSession.builder
+    .appName("BankingFraudPipeline")
+    .master("local[*]")
+    .getOrCreate()
+)
+
+print("Spark version:", spark.version)
+//To Read Transaction
+transactions = spark.read.csv(
+    "data/raw/transactions.csv",
+    header=True,
+    inferSchema=True
+)
+transactions.show(10)
+//To Read schema
+transactions.printSchema()
+//Spark DataFrame
+transactions.select(
+    "customer_id",
+    "amount",
+    "location"
+).show()
+//Filter
+transactions.filter(
+    transactions.amount > 100000
+).show()
+//International Transaction
+transactions.filter(
+    transactions.is_international == 1
+).show()
+//Check Record count
+transactions.count()
+//Check Null
+transactions.select([
+    sum(
+        col(c).isNull().cast("int")
+    ).alias(c)
+    for c in transactions.columns
+]).show()
+//Remove invalid Transaction
+transactions = transactions.filter(
+    col("amount") > 0
+//Filter Invalid CustomerID
+transactions = transactions.filter(
+    col("customer_id").isNotNull()
+)
+//Calculate Total Transaction amount
+customer_features = transactions.groupBy(
+    "customer_id"
+).agg(
+    sum("amount").alias("total_transaction_amount")
+)
+//Average Transaction Amount
+avg_transaction = transactions.groupBy(
+    "customer_id"
+).agg(
+    avg("amount").alias("avg_transaction_amount")
+)
+//Transaction Count-tells how frequently customer Transacts
+transaction_count = transactions.groupBy(
+    "customer_id"
+).agg(
+    count("*").alias("transaction_count")
+)
+//Maximum Transaction
+max_transaction = transactions.groupBy(
+    "customer_id"
+).agg(
+    max("amount").alias("max_transaction_amount")
+)
+//Minimum Transaction
+min_transaction = transactions.groupBy(
+    "customer_id"
+).agg(
+    min("amount").alias("min_transaction_amount")
+)
+//International Transaction Ratio
+international_ratio = transactions.groupBy(
+    "customer_id"
+).agg(
+    avg(
+        col("is_international")
+    ).alias("international_transaction_ratio")
+)
+//Device change Ratio
+device_change_ratio = transactions.groupBy(
+    "customer_id"
+).agg(
+    avg(
+        col("device_change")
+    ).alias("device_change_ratio")
+)
+//Transaction Velocity
+velocity_features = transactions.groupBy(
+    "customer_id"
+).agg(
+    avg(
+        "transaction_velocity"
+    ).alias("avg_transaction_velocity")
+)
+//Merchant/Transaction diversity
+"merchant": np.random.choice(
+    [
+        "Amazon",
+        "Flipkart",
+        "Retail",
+        "Fuel",
+        "Travel",
+        "Restaurant",
+        "Electronics",
+        "Utility"
+    ],
+    N
+)
+//Merchant Diversity
+merchant_diversity = transactions.groupBy(
+    "customer_id"
+).agg(
+    countDistinct("merchant").alias(
+        "merchant_diversity"
+    )
+)
+//Aggregations
+customer_features = (
+    customer_features
+    .join(
+        avg_transaction,
+        "customer_id",
+        "left"
+    )
+    .join(
+        transaction_count,
+        "customer_id",
+        "left"
+    )
+    .join(
+        max_transaction,
+        "customer_id",
+        "left"
+    )
+    .join(
+        international_ratio,
+        "customer_id",
+        "left"
+    )
+    .join(
+        device_change_ratio,
+        "customer_id",
+        "left"
+    )
+    .join(
+        velocity_features,
+        "customer_id",
+        "left"
+    )
+    .join(
+        merchant_diversity,
+        "customer_id",
+        "left"
+    )
+)
+customer_features.show()
+//Result
+//customer_id
+//total_transaction_amount
+//avg_transaction_amount
+//transaction_count
+//max_transaction_amount
+//international_transaction_ratio
+//device_change_ratio
+//avg_transaction_velocity
+//merchant_diversity
+
+//Fraud Indicators
+transactions = transactions.withColumn(
+    "high_value_flag",
+    when(col("amount") > 100000, 1).otherwise(0)
+)
+transactions = transactions.withColumn(
+    "suspicious_transaction",
+    when(
+        (
+            (col("amount") > 100000)
+            & (col("is_international") == 1)
+        ),
+        1
+    ).otherwise(0)
+)
+//Group Suspisious Transaction
+suspicious = transactions.filter(
+    col("suspicious_transaction") == 1
+)
+
+suspicious.count()
+from pyspark.sql.window import Window
+from pyspark.sql.functions import row_number
+
+window = Window.partitionBy(
+    "customer_id"
+).orderBy(
+    col("amount").desc()
+)
+transactions_ranked = transactions.withColumn(
+    "transaction_rank",
+    row_number().over(window)
+)
+customer_features.write.mode(
+    "overwrite"
+).parquet(
+    "data/processed/fraud_customer_features"
+)
