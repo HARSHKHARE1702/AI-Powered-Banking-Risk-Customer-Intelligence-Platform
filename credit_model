@@ -1,0 +1,189 @@
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import oneHotEncoder
+from xgboost import XGBClassifier
+from sklearn.pipeline import pipeline
+from sklean.metrics import accuracy_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import precsion_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import classification_report
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import average_precision_score
+
+df = pd.read_csv(
+    "data/raw/customers.csv"
+)
+print(df.shape)
+print(df.head())
+
+//Add Feature Engineering
+
+df["debt_to_income"] = (
+    df["monthly_emi"] / df["income"]
+)
+
+df["loan_to_income"] = (
+    df["loan_amount"] / df["income"]
+)
+
+df["balance_to_income"] = (
+    df["account_balance"] / df["income"]
+)
+
+df["has_delinquency"] = (
+    df["delinquency_count"] > 0
+).astype(int)
+
+//Define Features and Target
+X = df.drop(
+    columns=[
+        "customer_id",
+        "default"
+    ]
+)
+
+y = df["default"]
+//Identify Feature Types
+categorical_features = [
+    "employment_type"
+]
+
+numeric_features = [
+    column
+    for column in X.columns
+    if column not in categorical_features
+]
+//Train-Test split
+  X_train,X_test, y_train,y_test=train_test_split(
+    X,
+    y,
+    test_size=0.20,
+    random_state=42,
+    stratify=y
+  )
+  preprocessor = ColumnTransformer(
+    transformers=[
+        (
+            "categorical",
+            OneHotEncoder(
+                handle_unknown="ignore"
+            ),
+            categorical_features
+        )
+    ],
+    remainder="passthrough"
+)
+  //This Transforms
+  //employment_type
+Salaried
+Business
+Self-Employed
+
+model = XGBClassifier(
+    n_estimators=300,
+    max_depth=5,
+    learning_rate=0.05,
+    subsample=0.8,//to ruduce overfitting
+    colsample_bytree=0.8,
+    random_state=42,
+    eval_metric="Logloss"
+  )
+  pipeline = Pipeline(
+    steps=[
+        (
+            "preprocessor",
+            preprocessor
+        ),
+        (
+            "model",
+            model
+        )
+    ]
+)
+  pipeline.fit(
+    X_train,
+    y_train
+)
+  probabilities = pipeline.predict_proba(
+    X_test
+)[:, 1]
+  def risk_category(probability):
+
+    if probability < 0.20:
+        return "LOW"
+
+    elif probability < 0.50:
+        return "MEDIUM"
+
+    else:
+        return "HIGH"
+      risk_categories = [
+    risk_category(p)
+    for p in probabilities
+]
+//Evaluate Accuracy   
+predictions = pipeline.predict(
+    X_test
+)
+
+accuracy = accuracy_score(
+    y_test,
+    predictions
+)
+
+print("Accuracy:", accuracy)
+        
+//Evaluate Confusion Matrix
+        cm = confusion_matrix(
+          y_test,
+          predictions)
+        print(cm)
+//Precision score
+        precision = precision_score(
+    y_test,
+    predictions
+)
+
+print(precision)
+//Recall score
+        recall = recall_score(
+          y_test,
+          predictions
+        )
+        print(recall)
+//F1 Score
+        f1=f1_score(
+          y_test,
+          predictions
+        )
+        print(F1 Score)
+//Classification Report
+        print(
+          classification_report(
+            y_test,
+            predictions
+          )
+        )
+ //ROC_AUC SCORE
+        roc_auc = roc_auc_Score(
+          y_test,
+          predictions
+        )
+    print(
+          "ROC-AUC:",
+          roc_auc
+        )
+  //PR_AUC SCORE
+        pr_auc = average_precision_score(
+        y_test,
+          proabability,
+        )
+        print(
+          "PR-AUC:",
+          pr_auc
+        )
+
+
