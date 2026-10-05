@@ -1,0 +1,37 @@
+import torch
+from torch.utils.data import Dataset
+
+
+class FraudDataset(Dataset):
+
+    def __init__(self, X, y):
+        self.X = torch.tensor(
+            X,
+            dtype=torch.float32
+        )
+
+        self.y = torch.tensor(
+            y,
+            dtype=torch.float32
+        )
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, index):
+        return self.X[index], self.y[index]
+
+train_dataset = FraudDataset(
+    X_train_scaled,
+    y_train.values
+)
+
+val_dataset = FraudDataset(
+    X_val_scaled,
+    y_val.values
+)
+
+test_dataset = FraudDataset(
+    X_test_scaled,
+    y_test.values
+)
