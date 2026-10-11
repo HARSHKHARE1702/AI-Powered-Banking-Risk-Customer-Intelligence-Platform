@@ -1,0 +1,12 @@
+Document: Credit Risk Review
+Version: 1.0
+Type: Demonstration policy
+
+Illustrative procedure:
+1. Assess the customer's financial information.
+2. Review the model-generated risk score with relevant evidence.
+3. Apply the approved lending policy and eligibility rules.
+4. Refer exceptions or uncertain cases for authorized human review.
+5. Do not use a model score as the sole basis for an adverse decision.
+
+This is synthetic demonstration content, not an official bank policy.
