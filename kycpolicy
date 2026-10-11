@@ -1,0 +1,18 @@
+Document: KYC Policy
+Version: 1.0
+Type: Demonstration policy
+
+Purpose:
+This document demonstrates how a banking policy knowledge base
+can be structured for a RAG application.
+
+Illustrative procedure:
+1. Verify the customer's identity using approved procedures.
+2. Check that submitted information is complete and consistent.
+3. If verification fails, do not treat the customer as verified.
+4. Refer unresolved cases to the authorized compliance team.
+5. Record the review outcome according to the applicable policy.
+
+Important:
+This is synthetic demonstration content, not an official
+banking or SBI policy.
