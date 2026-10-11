@@ -1,0 +1,9 @@
+//Package
+pip install langchain langchain-community langchain-openai
+pip install langchain-huggingface langchain-qdrant
+pip install sentence-transformers qdrant-client
+pip install python-dotenv
+
+//Configure your API Key
+OPENAI_API_KEY=your_api_key_here
+
