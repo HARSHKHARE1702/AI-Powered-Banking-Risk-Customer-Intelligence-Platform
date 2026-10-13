@@ -1,0 +1,36 @@
+
+from pathlib import Path
+
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_qdrant import QdrantVectorStore
+
+BASE_DIR = Path(__file__).resolve().parents[2]
+DB_DIR = BASE_DIR / "data" / "qdrant_db"
+
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
+
+vector_store = QdrantVectorStore.from_existing_local(
+    path=str(DB_DIR),
+    collection_name="banking_policies",
+    embedding=embeddings,
+)
+
+retriever = vector_store.as_retriever(
+    search_type="similarity",
+    search_kwargs={"k": 3},
+)
+
+
+def retrieve_policy(question: str):
+    return retriever.invoke(question)
+
+
+if __name__ == "__main__":
+    question = "What should happen if KYC verification fails?"
+
+    for document in retrieve_policy(question):
+        print("Source:", document.metadata.get("source", "unknown"))
+        print(document.page_content)
+        print("-" * 50)
