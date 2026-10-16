@@ -1,5 +1,7 @@
 import torch
 from torch.utils.data import Dataset
+from torch.utils.data import Dataloader
+import torch.nn as nn
 
 
 class FraudDataset(Dataset):
@@ -35,3 +37,52 @@ test_dataset = FraudDataset(
     X_test_scaled,
     y_test.values
 )
+
+train_loader = DataLoader(
+    train_dataset,
+    batch_size=256,
+    shuffle=True
+)
+
+val_loader = DataLoader(
+    val_dataset,
+    batch_size=256,
+    shuffle=False
+)
+
+test_loader = DataLoader(
+    test_dataset,
+    batch_size=256,
+    shuffle=False
+)
+
+class FraudNeuralNetwork(nn.Module):
+
+    def __init__(self, input_dim):
+
+        super().__init__()
+
+        self.network = nn.Sequential(
+
+            nn.Linear(input_dim, 128),
+
+            nn.ReLU(),
+
+            nn.BatchNorm1d(128),
+
+            nn.Dropout(0.30),
+
+            nn.Linear(128, 64),
+
+            nn.ReLU(),
+
+            nn.BatchNorm1d(64),
+
+            nn.Dropout(0.30),
+
+            nn.Linear(64, 1)
+        )
+
+    def forward(self, x):
+
+        return self.network(x)
