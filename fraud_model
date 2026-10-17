@@ -86,3 +86,60 @@ class FraudNeuralNetwork(nn.Module):
     def forward(self, x):
 
         return self.network(x)
+
+//class imbalance
+input_dim = X_train_scaled.shape[1]
+
+model = FraudNeuralNetwork(
+    input_dim
+)
+fraud_count = y_train.sum()
+legitimate_count = len(y_train) - fraud_count
+
+pos_weight = torch.tensor(
+    [legitimate_count / fraud_count],
+    dtype=torch.float32
+)
+criterion = nn.BCEWithLogitsLoss(
+    pos_weight=pos_weight
+)
+//Used adam as optimizer
+optimizer = torch.optim.Adam(
+    model.parameters(),
+    lr=0.001
+)
+//Training loop
+epochs = 30
+
+for epoch in range(epochs):
+
+    model.train()
+
+    total_loss = 0
+
+    for X_batch, y_batch in train_loader:
+
+        optimizer.zero_grad()
+
+        outputs = model(X_batch)
+//Forward-pass
+        loss = criterion(
+            outputs.squeeze(),
+            y_batch
+        )
+//Calculate-error
+        loss.backward()
+//Calcuate-gradients
+        optimizer.step()
+
+        total_loss += loss.item()
+
+    average_loss = (
+        total_loss /
+        len(train_loader)
+    )
+
+    print(
+        f"Epoch {epoch + 1}/{epochs}, "
+        f"Loss: {average_loss:.4f}"
+    )
