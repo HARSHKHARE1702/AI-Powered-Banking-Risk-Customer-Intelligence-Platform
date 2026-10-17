@@ -143,3 +143,26 @@ for epoch in range(epochs):
         f"Epoch {epoch + 1}/{epochs}, "
         f"Loss: {average_loss:.4f}"
     )
+//Validation
+model.eval()
+
+validation_predictions = []
+validation_actual = []
+
+with torch.no_grad():
+
+    for X_batch, y_batch in val_loader:
+
+        outputs = model(X_batch)
+
+        probabilities = torch.sigmoid(
+            outputs
+        )
+
+        validation_predictions.extend(
+            probabilities.squeeze().numpy()
+        )
+
+        validation_actual.extend(
+            y_batch.numpy()
+        )
