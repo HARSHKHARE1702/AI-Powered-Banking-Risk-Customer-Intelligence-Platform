@@ -131,7 +131,7 @@ for epoch in range(epochs):
         loss.backward()
 //Calcuate-gradients
         optimizer.step()
-
+//Update-Model weights
         total_loss += loss.item()
 
     average_loss = (
