@@ -2,6 +2,7 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data import Dataloader
 import torch.nn as nn
+import numpy as np
 
 
 class FraudDataset(Dataset):
@@ -166,3 +167,9 @@ with torch.no_grad():
         validation_actual.extend(
             y_batch.numpy()
         )
+threshold = 0.50
+predicted_classes = (
+np.array(validation_predictions)
+>=threshold
+).astype(int)
+
