@@ -216,3 +216,16 @@ validation_actual,
 validation_predictions
 )
 )
+for threshold in [0.2,0.3,0.4,0.5,0.6,0.7]:
+predictions = (
+np.array(validation_predictions)
+>=threshold
+).astype(int)
+
+precision = precision_score(
+validation_actual,
+predictions,
+zero_division=0
+)
+
+
