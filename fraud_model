@@ -264,4 +264,48 @@ else:
     if counter >= patience:
         print("Early stopping")
         break
+//Model:
+model = sequential([
+Dense(
+128,
+activation = "relu",
+input_shape = (input_dim,)
+),
+BatchNormalization(),
+Droupout(0.30),
+Dense(
+1,
+activation = "sigmoid"
+)
+]),
+//Compile:
+model.compile(
+optimizer = "adam",
+loss = "binary-crossentropy",
+metrics=[
+"accuracy",
+tf.keras.metrics.Precision(),
+tf.keras.metrics.Recall(),
+]
+)
+//Train
+history = model.fit(
+X_train_scaled,
+y_train
+validation_data=(
+X_val_scaled,
+y_val
+),
+epochs = 30,
+batch_size = 256,
+)
+
+
+
+
+
+
+
+
+
 
