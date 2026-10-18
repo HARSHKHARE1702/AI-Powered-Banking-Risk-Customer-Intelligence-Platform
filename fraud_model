@@ -3,7 +3,16 @@ from torch.utils.data import Dataset
 from torch.utils.data import Dataloader
 import torch.nn as nn
 import numpy as np
-from sklearn.metrics import  
+from sklearn.metrics import 
+from sklearn.metrics import (
+    precision_score,
+    recall_score,
+    f1_score,
+    roc_auc_score,
+    average_precision_score,
+    confusion_matrix
+)
+
 
 
 class FraudDataset(Dataset):
@@ -173,4 +182,37 @@ predicted_classes = (
 np.array(validation_predictions)
 >=threshold
 ).astype(int)
-
+print (
+"Precision:"
+ precision_score(
+        validation_actual,
+        predicted_classes
+    )
+)
+print(
+"Recall:"
+precision_score(
+validation_actual,
+predicted_classes
+)
+)
+print(
+"F1:"
+f1_score(
+validation_actual,
+predicted_classes
+)
+)
+print(
+"ROC-AUC:"(
+validation_actual,
+predicted_classes
+)
+)
+print(
+"PR-AUC:"(
+average_precision_score(
+validation_actual,
+validation_predictions
+)
+)
