@@ -12,7 +12,13 @@ from sklearn.metrics import (
     average_precision_score,
     confusion_matrix
 )
-
+import tensorflow as tf
+from tensorflow.keras import Sequential
+from tensorflow.keras.layers import (
+Dense,
+Dropout,
+BatchNormalization,
+)
 
 
 class FraudDataset(Dataset):
@@ -227,5 +233,35 @@ validation_actual,
 predictions,
 zero_division=0
 )
+recall = recall_score(
+validation_actual,
+predictions,
+zero_division=0
+)
+print(
+threshold,
+precison,
+recall
+)
+best_val_loss = float("inf")
+patience = 5
+counter = 0
 
+if val_loss < best_val_loss:
+
+    best_val_loss = val_loss
+    counter = 0
+
+    torch.save(
+        model.state_dict(),
+        "models/best_fraud_model.pt"
+    )
+
+else:
+
+    counter += 1
+
+    if counter >= patience:
+        print("Early stopping")
+        break
 
