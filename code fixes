@@ -1,2 +1,30 @@
-//The above fix is for pre_processing the credit 
-from scipy.sparse
+#Code fix 1 :- if Preprocess_model.py not able to load the model or save it kindly replace the exisiting X_test,X_train NPZ SAVE FILES WITH THIS CODE 
+
+from scipy.sparse import save_npz, issparse
+import numpy as np
+
+# Save training features
+if issparse(X_train_processed):
+    save_npz(
+        PROCESSED_DIR / "X_train.npz",
+        X_train_processed
+    )
+else:
+    np.save(
+        PROCESSED_DIR / "X_train.npy",
+        X_train_processed
+    )
+
+# Save testing features
+if issparse(X_test_processed):
+    save_npz(
+        PROCESSED_DIR / "X_test.npz",
+        X_test_processed
+    )
+else:
+    np.save(
+        PROCESSED_DIR / "X_test.npy",
+        X_test_processed
+    )
+
+print("Processed datasets saved successfully!")
