@@ -28,3 +28,65 @@ else:
     )
 
 print("Processed datasets saved successfully!")
+
+Code fix 2:- Training prediction on Train_credit_model.py file
+#Training predictions
+y_train_pred = model.predict(X_train)
+#Trainig probabilities
+y_train_probability = model.predict_proba(X_train)[:,1]
+#Training Accuracy
+train_accuracy = accuracy_score(
+y_train,y_train_pred,
+)
+#Training Precession
+train_precision = precision_score(
+y_train,y_train_pred,
+zero_division = 0
+)
+#Training Recall
+train_recall = recall_score(
+y_train,y_train_pred,
+zero_division=0
+)
+#Training f1 score
+train_f1 = f1_score(
+y_train,y_train_pred,
+zero division = 0
+)
+#Training ROC-AUC
+train_roc_auc = roc_auc_score(
+y_train,y_train_probability
+)
+print("Training Accuracy:",train_accuracy)
+print("Training Precision:",train_precision)
+print("Training Recall:",train_recall)
+print("Training F1:",train_f1)
+print("Training ROC-AUC:",train_roc_auc)
+
+code fix 3:- Existing preprocess_credit.py file replace the old train_test_split section with :-
+
+#separate features and target
+X = df.drop(columns=["default"])
+y = df["default"]
+#First-split: 70% Training 30% temporary
+X_train,X_temp,y_train,y_temp = train_test_split(
+X,
+y,
+test_size=0.30,
+random_state=42,
+stratify = y
+)
+#second-split:15% validation, 15% testing
+X_val,X_test,y_val,y_temp = train_test_split(
+x_temp,
+y_temp,
+test_size = 0.50,
+random_state=50,
+stratify = y_temp
+)
+# Fit only on training data
+X_train_processed = preprocessor.fit_transform(X_train)
+# only transform validation and testing
+X_val_processed = preprocessor.transform(X_val)
+X_test_processed = preprocessor.transform(X_test)
+
