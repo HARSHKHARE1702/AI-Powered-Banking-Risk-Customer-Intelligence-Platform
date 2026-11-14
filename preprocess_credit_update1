@@ -1,0 +1,410 @@
+
+from pathlib import Path
+
+import joblib
+import numpy as np
+import pandas as pd
+
+from scipy.sparse import save_npz, issparse
+
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+
+
+# ---------------------------------
+# 1. File paths
+# ---------------------------------
+
+ROOT = Path(__file__).resolve().parents[2]
+
+RAW_FILE = ROOT / "data" / "raw" / "customers.csv"
+
+PROCESSED_DIR = ROOT / "data" / "processed"
+
+MODEL_DIR = ROOT / "artifacts"
+
+PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# ---------------------------------
+# 2. Load dataset
+# ---------------------------------
+
+df = pd.read_csv(RAW_FILE)
+
+print("Original dataset:", df.shape)
+
+
+# ---------------------------------
+# 3. Basic cleaning
+# ---------------------------------
+
+df = df.drop_duplicates()
+
+TARGET = "default"
+
+if TARGET not in df.columns:
+    raise ValueError(
+        f"Target column '{TARGET}' not found"
+    )
+
+df = df.dropna(subset=[TARGET])
+
+# Convert target into binary labels
+
+if df[TARGET].dtype == "object":
+
+    target_mapping = {
+        "yes": 1,
+        "no": 0,
+        "true": 1,
+        "false": 0,
+        "1": 1,
+        "0": 0
+    }
+
+    df[TARGET] = (
+        df[TARGET]
+        .astype(str)
+        .str.lower()
+        .str.strip()
+        .map(target_mapping)
+    )
+
+if df[TARGET].isna().any():
+    raise ValueError(
+        "Unrecognized or missing target labels"
+    )
+
+df[TARGET] = df[TARGET].astype(int)
+
+if not set(df[TARGET].unique()).issubset({0, 1}):
+    raise ValueError(
+        "Expected binary target values 0 and 1"
+    )
+
+if set(df[TARGET].unique()) != {0, 1}:
+    raise ValueError(
+        "Dataset must contain both target classes"
+    )
+
+
+# ---------------------------------
+# 4. Separate features and target
+# ---------------------------------
+
+drop_columns = [
+    TARGET,
+    "customer_id"
+]
+
+X = df.drop(
+    columns=[
+        c for c in drop_columns
+        if c in df.columns
+    ]
+)
+
+y = df[TARGET]
+
+print("\nFeature dataset:", X.shape)
+print("Target dataset:", y.shape)
+
+
+# ---------------------------------
+# 5. Identify feature types
+# ---------------------------------
+
+numeric_features = X.select_dtypes(
+    include=["number"]
+).columns.tolist()
+
+categorical_features = X.select_dtypes(
+    include=["object", "category", "bool"]
+).columns.tolist()
+
+print("\nNumeric features:", numeric_features)
+
+print("Categorical features:", categorical_features)
+
+if not numeric_features and not categorical_features:
+    raise ValueError("No usable features found")
+
+
+# ---------------------------------
+# 6. Preprocessing pipelines
+# ---------------------------------
+
+numeric_pipeline = Pipeline(steps=[
+
+    (
+        "imputer",
+        SimpleImputer(strategy="median")
+    ),
+
+    (
+        "scaler",
+        StandardScaler()
+    )
+
+])
+
+
+categorical_pipeline = Pipeline(steps=[
+
+    (
+        "imputer",
+        SimpleImputer(strategy="most_frequent")
+    ),
+
+    (
+        "encoder",
+        OneHotEncoder(handle_unknown="ignore")
+    )
+
+])
+
+
+preprocessor = ColumnTransformer(
+
+    transformers=[
+
+        (
+            "numeric",
+            numeric_pipeline,
+            numeric_features
+        ),
+
+        (
+            "categorical",
+            categorical_pipeline,
+            categorical_features
+        )
+
+    ]
+
+)
+
+
+# ---------------------------------
+# 7. Training / Validation / Testing
+# ---------------------------------
+
+# First split:
+# 70% training and 30% temporary data
+
+X_train, X_temp, y_train, y_temp = train_test_split(
+
+    X,
+    y,
+
+    test_size=0.30,
+
+    random_state=42,
+
+    stratify=y
+
+)
+
+
+# Second split:
+# Split temporary data equally
+# 15% validation and 15% testing
+
+X_val, X_test, y_val, y_test = train_test_split(
+
+    X_temp,
+    y_temp,
+
+    test_size=0.50,
+
+    random_state=42,
+
+    stratify=y_temp
+
+)
+
+
+print("\n========== DATA SPLIT ==========")
+
+print("Training rows:", len(X_train))
+
+print("Validation rows:", len(X_val))
+
+print("Testing rows:", len(X_test))
+
+
+# ---------------------------------
+# 8. Fit preprocessing ONLY on training
+# ---------------------------------
+
+X_train_processed = preprocessor.fit_transform(
+    X_train
+)
+
+# Validation: transform only
+
+X_val_processed = preprocessor.transform(
+    X_val
+)
+
+# Testing: transform only
+
+X_test_processed = preprocessor.transform(
+    X_test
+)
+
+
+# ---------------------------------
+# 9. Save preprocessing artifacts
+# ---------------------------------
+
+joblib.dump(
+
+    preprocessor,
+
+    MODEL_DIR / "credit_preprocessor.joblib"
+
+)
+
+
+joblib.dump(
+
+    list(X.columns),
+
+    MODEL_DIR / "credit_feature_columns.joblib"
+
+)
+
+
+# ---------------------------------
+# 10. Save dense / sparse features
+# ---------------------------------
+
+def save_features(name, data):
+
+    npy_path = PROCESSED_DIR / f"{name}.npy"
+
+    npz_path = PROCESSED_DIR / f"{name}.npz"
+
+    # Remove an old alternative-format file
+    # to prevent loading stale data.
+
+    if issparse(data):
+
+        if npy_path.exists():
+            npy_path.unlink()
+
+        save_npz(npz_path, data)
+
+    else:
+
+        if npz_path.exists():
+            npz_path.unlink()
+
+        np.save(npy_path, data)
+
+
+# Save all three feature datasets
+
+save_features(
+    "X_train",
+    X_train_processed
+)
+
+save_features(
+    "X_val",
+    X_val_processed
+)
+
+save_features(
+    "X_test",
+    X_test_processed
+)
+
+
+# ---------------------------------
+# 11. Save target labels
+# ---------------------------------
+
+y_train.to_csv(
+
+    PROCESSED_DIR / "y_train.csv",
+
+    index=False
+
+)
+
+
+y_val.to_csv(
+
+    PROCESSED_DIR / "y_val.csv",
+
+    index=False
+
+)
+
+
+y_test.to_csv(
+
+    PROCESSED_DIR / "y_test.csv",
+
+    index=False
+
+)
+
+
+# ---------------------------------
+# 12. Save preprocessing metadata
+# ---------------------------------
+
+metadata = {
+
+    "training_rows": len(X_train),
+
+    "validation_rows": len(X_val),
+
+    "testing_rows": len(X_test),
+
+    "original_features": X.shape[1],
+
+    "processed_features": X_train_processed.shape[1],
+
+    "numeric_features": numeric_features,
+
+    "categorical_features": categorical_features
+
+}
+
+joblib.dump(
+
+    metadata,
+
+    MODEL_DIR / "credit_preprocessing_metadata.joblib"
+
+)
+
+
+# ---------------------------------
+# 13. Final summary
+# ---------------------------------
+
+print("\n========== PREPROCESSING COMPLETED ==========")
+
+print("Training features:", X_train_processed.shape)
+
+print("Validation features:", X_val_processed.shape)
+
+print("Testing features:", X_test_processed.shape)
+
+print("Processed features:", X_train_processed.shape[1])
+
+print("\nSaved files in:", PROCESSED_DIR)
+
+print("Saved artifacts in:", MODEL_DIR)
+
+print("\nAll three datasets generated successfully!")
