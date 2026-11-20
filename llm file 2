@@ -1,0 +1,46 @@
+import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+from openai import OpenAI
+
+# Find project root
+ROOT = Path(__file__).resolve().parents[2]
+
+# Load .env from project root
+ENV_FILE = ROOT / ".env"
+
+load_dotenv(dotenv_path=ENV_FILE)
+
+# Read API key
+API_KEY = os.getenv("OPENAI_API_KEY")
+MODEL = os.getenv("OPENAI_MODEL")
+
+# Validate configuration
+if not API_KEY:
+    raise ValueError(
+        f"OPENAI_API_KEY not found. Check: {ENV_FILE}"
+    )
+
+if not MODEL:
+    raise ValueError(
+        "OPENAI_MODEL not found in .env"
+    )
+
+# Initialize OpenAI client
+client = OpenAI(api_key=API_KEY)
+
+
+def generate_response(prompt: str) -> str:
+
+    response = client.responses.create(
+        model=MODEL,
+        instructions=(
+            "You are a professional banking AI assistant. "
+            "Give clear, accurate and responsible answers. "
+            "Do not invent banking policies."
+        ),
+        input=prompt
+    )
+
+    return response.output_text
