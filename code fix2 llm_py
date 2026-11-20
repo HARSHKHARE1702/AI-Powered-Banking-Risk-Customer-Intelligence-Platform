@@ -1,0 +1,8 @@
+from pathlib import Path
+# From Project root
+ROOT = Path(__file__).resolve().parents[2]
+#Load .env from Project root
+ENV_FILE = ROOT/".env"
+load_dotenv(dotenv_path=ENV_FILE)
+
+TO FIX THE BROKEN PATH FOR This issue 
